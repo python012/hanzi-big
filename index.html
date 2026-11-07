@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>大字 · 笔顺</title>
+<style>
+  :root {
+    --bg: #f7f4ee;
+    --ink: #1b1b1b;
+    --muted: #9a958c;
+    --grid: #ddd6c9;
+    --accent: #c8452f;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--ink);
+    font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    user-select: none;
+  }
+
+  #app { display: flex; flex-direction: column; height: 100%; }
+
+  /* 底部输入条 */
+  #bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 4px 18px 6px;
+    transition: opacity .45s ease;
+    position: relative; z-index: 5;
+  }
+  #bar.dim { opacity: .12; }
+  #input {
+    flex: 1; min-width: 0;
+    font: inherit; font-size: 22px; text-align: center;
+    padding: 8px 14px;
+    color: var(--ink);
+    background: transparent;
+    border: none; border-bottom: 1px solid #cfc7b8;
+    outline: none; border-radius: 0;
+  }
+  #input::placeholder { color: #b9b2a5; }
+  #input:focus { border-bottom-color: var(--accent); }
+  #clear {
+    border: none; background: transparent; color: var(--muted);
+    font-size: 20px; cursor: pointer; padding: 4px 6px; line-height: 1;
+  }
+  #clear:hover { color: var(--ink); }
+
+  /* 舞台 */
+  #stage {
+    flex: 1; min-height: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 2vmin;
+  }
+  #grid {
+    display: grid; place-items: center;
+    width: 100%; height: 100%;
+    gap: 2vmin;
+  }
+  .item {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .pinyin {
+    color: #8d8880;
+    letter-spacing: .06em;
+    line-height: 1.2;
+    margin-bottom: .22em;
+    white-space: nowrap;
+  }
+  .cell {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    background:
+      linear-gradient(to right, transparent calc(50% - .5px), var(--grid) calc(50% - .5px), var(--grid) calc(50% + .5px), transparent calc(50% + .5px)),
+      linear-gradient(to bottom, transparent calc(50% - .5px), var(--grid) calc(50% - .5px), var(--grid) calc(50% + .5px), transparent calc(50% + .5px)),
+      linear-gradient(to top right, transparent calc(50% - .5px), var(--grid) calc(50% - .5px), var(--grid) calc(50% + .5px), transparent calc(50% + .5px)),
+      linear-gradient(to bottom right, transparent calc(50% - .5px), var(--grid) calc(50% - .5px), var(--grid) calc(50% + .5px), transparent calc(50% + .5px));
+    border: 1px solid var(--grid);
+    border-radius: 2.2vmin;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .cell svg { display: block; }
+  .meta {
+    position: absolute; left: 0; right: 0; bottom: 1.4vmin;
+    text-align: center; color: var(--muted);
+    font-size: 13px; letter-spacing: .08em;
+    pointer-events: none;
+  }
+  .meta b { color: #8d8880; font-weight: 500; }
+
+  /* 顶部提示 */
+  #hint {
+    text-align: center; color: var(--muted);
+    font-size: 13px; padding: 16px 16px 2px;
+    letter-spacing: .04em;
+    transition: opacity .45s ease;
+  }
+  #hint.dim { opacity: .12; }
+  #hint kbd {
+    font: inherit; font-size: 12px;
+    border: 1px solid #d4ccbd; border-radius: 4px;
+    padding: 1px 5px; margin: 0 2px; color: #7d786f;
+    background: rgba(255,255,255,.5);
+  }
+
+  #fs {
+    position: fixed; top: 10px; right: 14px; z-index: 6;
+    border: none; background: transparent; color: var(--muted);
+    font-size: 19px; line-height: 1; cursor: pointer; padding: 6px 8px;
+    border-radius: 8px;
+    transition: opacity .45s ease, color .2s ease;
+  }
+  #fs:hover { color: var(--ink); }
+  #fs.dim { opacity: .15; }
+
+  /* 版权与数据来源 */
+  #credit {
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--muted);
+    opacity: .55;
+    padding: 0 16px 10px;
+    letter-spacing: .01em;
+    user-select: text;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hint">
+    点击汉字播放笔顺　·　<kbd>Esc</kbd> 清空
+  </div>
+  <button id="fs" title="全屏">⛶</button>
+
+  <div id="stage"><div id="grid"></div></div>
+
+  <div id="bar">
+    <input id="input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+           placeholder="输入汉字，最多显示前 3 个…" maxlength="12" autofocus>
+    <button id="clear" title="清空 (Esc)">✕</button>
+  </div>
+
+  <div id="credit">
+    字形与笔顺数据来自 Make Me a Hanzi（文鼎楷体）· Arphic Public License
+  </div>
+</div>
+
+<script src="hanzi-data.js"></script>
+<script src="hanzi-writer.min.js"></script>
+<script src="pinyin-pro.min.js"></script>
+<script>
+(function () {
+  var DATA = window.HANZI_DATA || {};
+  var input = document.getElementById('input');
+  var gridEl = document.getElementById('grid');
+  var stageEl = document.getElementById('stage');
+  var barEl = document.getElementById('bar');
+  var hintEl = document.getElementById('hint');
+  var fsEl = document.getElementById('fs');
+
+  var MAX = 3;            // 最多显示 3 个字
+  var writers = [];       // { writer, char, cell }
+  var currentText = '';
+  var playing = false;
+  var dimTimer = null;
+  var playToken = 0;
+
+  function isHan(ch) { return /\p{Script=Han}/u.test(ch); }
+
+  function scheduleDim() {
+    clearTimeout(dimTimer);
+    barEl.classList.remove('dim');
+    hintEl.classList.remove('dim');
+    fsEl.classList.remove('dim');
+    dimTimer = setTimeout(function () {
+      hintEl.classList.add('dim');
+      fsEl.classList.add('dim');
+      if (!input.matches(':focus') && !playing) barEl.classList.add('dim');
+    }, 4000);
+  }
+
+  // 1～3 个字一律横排一行，格子尽量大（上方留出拼音的高度）
+  function computeLayout(n) {
+    var w = stageEl.clientWidth - 8;
+    var h = stageEl.clientHeight - 8;
+    var gap = Math.max(8, Math.min(20, Math.round(Math.min(w, h) * 0.02)));
+    var base = Math.min((w - (n - 1) * gap) / n, h);
+    var pyFs = Math.max(14, Math.min(34, Math.round(base * 0.075)));
+    var pyH = Math.ceil(pyFs * 1.2) + Math.round(pyFs * 0.22) + 4;
+    var size = Math.min((w - (n - 1) * gap) / n, h - pyH);
+    return { rows: 1, cols: n, size: Math.floor(size * 0.98), gap: gap, pyFs: pyFs };
+  }
+
+  function clearWriters() {
+    playToken++;
+    playing = false;
+    document.body.classList.remove('playing');
+    writers.forEach(function (w) {
+      if (w.writer) { try { w.writer.cancelQuiz && w.writer.cancelQuiz(); } catch (e) {} }
+    });
+    writers = [];
+    gridEl.innerHTML = '';
+  }
+
+  function render(text) {
+    currentText = text;
+    var chars = Array.from(text).filter(isHan).slice(0, MAX);
+    clearWriters();
+    if (!chars.length) { scheduleDim(); return; }
+
+    var lay = computeLayout(chars.length);
+    gridEl.style.gridTemplateColumns = 'repeat(' + lay.cols + ', 1fr)';
+    gridEl.style.gridTemplateRows = 'repeat(' + lay.rows + ', 1fr)';
+    gridEl.style.gap = lay.gap + 'px';
+    var size = lay.size;
+
+    // 带上下文的多音字判断：把整串字交给 pinyin-pro
+    var py = [];
+    try {
+      if (window.pinyinPro) {
+        var str = chars.join('');
+        if (chars.length === 1) {
+          // 单字取最常用的读音（如「了」显示 le，而不是 liǎo）
+          var all = window.pinyinPro.pinyin(str, { type: 'array', toneType: 'symbol', multiple: true });
+          py = [all[0]];
+        } else {
+          py = window.pinyinPro.pinyin(str, { type: 'array', toneType: 'symbol' });
+        }
+      }
+    } catch (e) {}
+
+    chars.forEach(function (ch, idx) {
+      var item = document.createElement('div');
+      item.className = 'item';
+
+      var pyEl = document.createElement('div');
+      pyEl.className = 'pinyin';
+      pyEl.style.fontSize = lay.pyFs + 'px';
+      var reading = py[idx] || '';
+      if (reading === ch) reading = '';   // 生僻字查不到读音时不要把字本身当地拼音
+      pyEl.textContent = reading;
+      item.appendChild(pyEl);
+
+      var cell = document.createElement('div');
+      cell.className = 'cell';
+      var box = document.createElement('div');
+      cell.appendChild(box);
+
+      var meta = document.createElement('div');
+      meta.className = 'meta';
+      cell.appendChild(meta);
+
+      item.appendChild(cell);
+      gridEl.appendChild(item);
+
+      var entry = { writer: null, char: ch, cell: cell };
+      cell.addEventListener('click', function () {
+        playOne(entry);
+        input.focus({ preventScroll: true });
+      });
+
+      var data = DATA[ch];
+      if (!data) {
+        meta.innerHTML = '<b>' + ch + '</b> · 未收录';
+        box.style.cssText = 'width:' + size + 'px;height:' + size + 'px;display:flex;align-items:center;justify-content:center;font-size:' + (size * 0.6) + 'px;color:#ddd6c9';
+        box.textContent = ch;
+        writers.push(entry);
+        return;
+      }
+
+      var writer = HanziWriter.create(box, ch, {
+        width: size,
+        height: size,
+        padding: size * 0.06,
+        showCharacter: true,
+        showOutline: true,          // 轮廓始终显示
+        strokeColor: '#333333',      // 比纯黑稍弱一点，长时间看更柔和
+        outlineColor: '#e2dbcd',
+        radicalColor: null,
+        strokeAnimationSpeed: 1.4,
+        delayBetweenStrokes: 120,
+        charDataLoader: function (c, onComplete) {
+          if (DATA[c]) onComplete(DATA[c]);
+          else onComplete({ strokes: [], medians: [] });
+        }
+      });
+
+      var strokes = (data.strokes || []).length;
+      meta.innerHTML = '<b>' + ch + '</b> · ' + strokes + ' 画';
+
+      entry.writer = writer;
+      writers.push(entry);
+    });
+
+    scheduleDim();
+  }
+
+  function playOne(entry) {
+    if (!entry || !entry.writer) return;
+    var writer = entry.writer;
+    var token = ++playToken;
+    playing = true;
+    document.body.classList.add('playing');
+
+    writer.hideCharacter();
+    writer.showOutline();     // 动画过程中未画的笔画保持浅灰可见
+
+    Promise.resolve(writer.animateCharacter({
+      strokeAnimationSpeed: 1.4,
+      delayBetweenStrokes: 120
+    })).catch(function () {}).then(function () {
+      if (token !== playToken) return;
+      playing = false;
+      document.body.classList.remove('playing');
+      scheduleDim();
+    });
+  }
+
+  function toggleFullscreen() {
+    var doc = document, el = document.documentElement;
+    var isFull = doc.fullscreenElement || doc.webkitFullscreenElement;
+    if (!isFull) {
+      (el.requestFullscreen || el.webkitRequestFullscreen || function () {}).call(el);
+    } else {
+      (doc.exitFullscreen || doc.webkitExitFullscreen || function () {}).call(doc);
+    }
+  }
+
+  input.addEventListener('input', function () {
+    render(input.value);
+    scheduleDim();
+  });
+
+  document.getElementById('clear').addEventListener('click', function () {
+    input.value = '';
+    render('');
+    input.focus();
+  });
+
+  fsEl.addEventListener('click', function () {
+    toggleFullscreen();
+    input.focus({ preventScroll: true });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.isComposing || e.keyCode === 229) return;   // 中文输入法组词中
+    if (e.key === 'Escape') {
+      input.value = '';
+      render('');
+      input.focus();
+      return;
+    }
+    if (document.activeElement === input) return;
+    if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); return; }
+    if (e.key.length === 1) input.focus();
+  });
+
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () { render(currentText); }, 180);
+  });
+
+  document.addEventListener('mousemove', scheduleDim, { passive: true });
+
+  // 启动：支持 index.html#学 或 ?c=学 指定初始汉字
+  var initial = '';
+  var params = null;
+  try {
+    params = new URLSearchParams(location.search);
+    initial = decodeURIComponent((location.hash || '').replace(/^#/, '')) ||
+              params.get('c') || '';
+  } catch (e) {}
+  if (!initial) initial = '学';
+  input.value = initial;
+  input.focus();
+  input.select();
+  render(initial);
+})();
+</script>
+
+<!-- 笔画数据许可证全文（同时保存为 ARPHICPL.TXT） -->
+<script type="text/plain" id="arphic-license">
+ARPHIC PUBLIC LICENSE
+
+Copyright (C) 1999 Arphic Technology Co., Ltd.
+11Fl. No.168, Yung Chi Rd., Taipei, 110 Taiwan
+All rights reserved except as specified below.
+
+Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is forbidden.
+
+Preamble
+
+   The licenses for most software are designed to take away your freedom to share and change it. By contrast, the ARPHIC PUBLIC LICENSE specifically permits and encourages you to use this software, provided that you give the recipients all the rights that we gave you and make sure they can get the modifications of this software.
+
+Legal Terms
+
+0. Definitions:
+   Throughout this License, "Font" means the TrueType fonts "AR PL Mingti2L Big5", "AR PL KaitiM Big5" (BIG-5 character set) and "AR PL SungtiL GB", "AR PL KaitiM GB" (GB character set) which are originally distributed by Arphic, and the derivatives of those fonts created through any modification including modifying glyph, reordering glyph, converting format, changing font name, or adding/deleting some characters in/from glyph table.
+
+   "PL" means "Public License".
+
+   "Copyright Holder" means whoever is named in the copyright or copyrights for the Font.
+
+   "You" means the licensee, or person copying, redistributing or modifying the Font.
+
+   "Freely Available" means that you have the freedom to copy or modify the Font as well as redistribute copies of the Font under the same conditions you received, not price. If you wish, you can charge for this service.
+
+1. Copying & Distribution
+   You may copy and distribute verbatim copies of this Font in any medium, without restriction, provided that you retain this license file (ARPHICPL.TXT) unaltered in all copies.
+
+2. Modification
+   You may otherwise modify your copy of this Font in any way, including modifying glyph, reordering glyph, converting format, changing font name, or adding/deleting some characters in/from glyph table, and copy and distribute such modifications under the terms of Section 1 above, provided that the following conditions are met:
+
+   a) You must insert a prominent notice in each modified file stating how and when you changed that file.
+
+   b) You must make such modifications Freely Available as a whole to all third parties under the terms of this License, such as by offering access to copy the modifications from a designated place, or distributing the modifications on a medium customarily used for software interchange.
+
+   c) If the modified fonts normally reads commands interactively when run, you must cause it, when started running for such interactive use in the most ordinary way, to print or display an announcement including an appropriate copyright notice and a notice that there is no warranty (or else, saying that you provide a warranty) and that users may redistribute the Font under these conditions, and telling the user how to view a copy of this License.
+
+   These requirements apply to the modified work as a whole. If identifiable sections of that work are not derived from the Font, and can be reasonably considered independent and separate works in themselves, then this License and its terms, do not apply to those sections when you distribute them as separate works. Therefore, mere aggregation of another work not based on the Font with the Font on a volume of a storage or distribution medium does not bring the other work under the scope of this License.
+
+3. Condition Subsequent
+   You may not copy, modify, sublicense, or distribute the Font except as expressly provided under this License. Any attempt otherwise to copy, modify, sublicense or distribute the Font will automatically retroactively void your rights under this License. However, parties who have received copies or rights from you under this License will keep their licenses valid so long as such parties remain in full compliance.
+
+4. Acceptance
+   You are not required to accept this License, since you have not signed it. However, nothing else grants you permission to copy, modify, sublicense or distribute the Font. These actions are prohibited by law if you do not accept this License. Therefore, by copying, modifying, sublicensing or distributing the Font, you indicate your acceptance of this License and all its terms and conditions.
+
+5. Automatic Receipt
+   Each time you redistribute the Font, the recipient automatically receives a license from the original licensor to copy, distribute or modify the Font subject to these terms and conditions. You may not impose any further restrictions on the recipients' exercise of the rights granted herein. You are not responsible for enforcing compliance by third parties to this License. 
+
+6. Contradiction
+   If, as a consequence of a court judgment or allegation of patent infringement or for any other reason (not limited to patent issues), conditions are imposed on you (whether by court order, agreement or otherwise) that contradict the conditions of this License, they do not excuse you from the conditions of this License. If you cannot distribute so as to satisfy simultaneously your obligations under this License and any other pertinent obligations, then as a consequence you may not distribute the Font at all. For example, if a patent license would not permit royalty-free redistribution of the Font by all those who receive copies directly or indirectly through you, then the only way you could satisfy both it and this License would be to refrain entirely from distribution of the Font.
+
+   If any portion of this section is held invalid or unenforceable under any particular circumstance, the balance of the section is intended to apply and the section as a whole is intended to apply in other circumstances. 
+
+7. NO WARRANTY
+   BECAUSE THE FONT IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY FOR THE FONT, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS OR OTHER PARTIES PROVIDE THE FONT "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE FONT IS WITH YOU. SHOULD THE FONT PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
+
+8. DAMAGES WAIVER
+   UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING, IN NO EVENT WILL ANY COPYRIGHTT HOLDERS, OR OTHER PARTIES WHO MAY COPY, MODIFY OR REDISTRIBUTE THE FONT AS PERMITTED ABOVE, BE LIABLE TO YOU FOR ANY DIRECT, INDIRECT, CONSEQUENTIAL, INCIDENTAL, SPECIAL OR EXEMPLARY DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE FONT (INCLUDING BUT NOT LIMITED TO PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA OR PROFITS; OR BUSINESS INTERRUPTION), EVEN IF SUCH HOLDERS OR OTHER PARTIES HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</script>
+</body>
+</html>
