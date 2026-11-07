@@ -1,4 +1,5 @@
 # 构建产物：由 build.py 生成，作为 Release 附件发布，不入库
 汉字.html
+hanzi-big.html
 
 .DS_Store
