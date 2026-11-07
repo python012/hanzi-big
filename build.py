@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""把 index.html 里的三个外部 JS 内联，生成可单独拷走的 大字.html。"""
+"""把 index.html 里的三个外部 JS 内联，生成可单独拷走的 汉字.html。"""
 
 HTML = "index.html"
 SOURCES = ["hanzi-data.js", "hanzi-writer.min.js", "pinyin-pro.min.js"]
-OUT = "大字.html"
+OUT = "汉字.html"
 
 html = open(HTML, encoding="utf-8").read()
 

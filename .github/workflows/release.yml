@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: "3.x"
 
-      # 大字.html 不入库，发版时用 index.html 现场生成
+      # 汉字.html 不入库，发版时用 index.html 现场生成
       - name: 生成单文件版
         run: python3 build.py
 
@@ -26,5 +26,5 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: 大字.html
+          files: 汉字.html
           generate_release_notes: true
