@@ -20,7 +20,10 @@ jobs:
 
       # 构建产物不入库，发版时用 index.html 现场生成
       # 文件名保持 ASCII，避免中文名被 GitHub 兜底成 default.html
+      # tag 名注入页脚，让使用者知道文件来自哪个版本
       - name: 生成单文件版
+        env:
+          BUILD_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '开发版' }}
         run: python3 build.py
 
       - name: 上传到 Release
